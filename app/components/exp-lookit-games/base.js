@@ -78,7 +78,7 @@ export default class Base {
 
         if (document.fullscreenElement) {
           document.fullscreenElement.requestPointerLock();
-          document.fullscreenElement.style.setProperty('cursor', 'none', 'important');
+
 
         } else {
           console.log('Leaving full-screen mode.');
