@@ -194,6 +194,7 @@ export default class DiscreteBounce extends PaddleGames {
 
     if (super.gameState.initialTime === 0  ) {
       sounds[gameSound.START].play();
+      super.gameState.initialTime = new Date().getTime();
     }
 
     if (super.ball.state === 'start') {

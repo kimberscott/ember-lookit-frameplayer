@@ -3,6 +3,7 @@
 # compiled output
 /dist
 /tmp
+/_build
 
 # dependencies
 /node_modules
@@ -28,8 +29,6 @@ testem.log
 
 # Virtualenv
 scripts/env
-
-migration/output/*
 
 /ssl
 
