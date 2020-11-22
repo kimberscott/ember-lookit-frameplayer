@@ -68,18 +68,6 @@ let {
  */
 
 /**
- * When pausing study, immediately before request to pause webcam recording
- *
- * @event pauseVideo
- */
-
-/**
- * When unpausing study, immediately before request to resume webcam recording
- *
- * @event unpauseVideo
- */
-
-/**
  * Just before stopping webcam video capture
  *
  * @event stoppingCapture
@@ -330,6 +318,50 @@ export default Ember.Mixin.create({
         }
 
         if (this.get('doUseCamera')) {
+
+            // If showing a wait-for-recording or wait-for-upload message, set it up now.
+            if ((this.get('showWaitForRecordingMessage') && this.get('startRecordingAutomatically')) || this.get('showWaitForUploadMessage')) {
+                let $waitForVideoCover = $('<div></div>');
+                $waitForVideoCover.addClass('video-record-mixin-wait-for-video'); // for easily referencing later to show/hide
+
+                // Set the background color of the cover
+                let colorSpec = this.get('waitForRecordingMessageColor');
+                if (!isColor(colorSpec)) {
+                    console.warn(`Invalid background color waitForRecordingMessageColor (${colorSpec}) provided; using default instead.`);
+                    colorSpec = 'white';
+                }
+                let colorSpecRGBA = colorSpecToRgbaArray(colorSpec);
+                $waitForVideoCover.css('background-color', colorSpec);
+
+                // Add the image, if any
+                if (this.get('waitForUploadImage')) {
+                    let imageSource = this.get('waitForUploadImage_parsed') ? this.get('waitForUploadImage_parsed') : this.get('waitForUploadImage');
+                    $waitForVideoCover.append($(`<img src='${imageSource}' class='video-record-mixin-image'>`));
+                }
+
+                // Add the video, if any
+                if (this.get('waitForUploadVideo')) {
+                    let $videoElement = $('<video loop autoplay="autoplay" class="video-record-mixin-image"></video>');
+                    let videoSources = this.get('waitForUploadVideo_parsed') ? this.get('waitForUploadVideo_parsed') : this.get('waitForUploadVideo');
+                    $.each(videoSources, function (idx, source) {
+                        $videoElement.append(`<source src=${source.src} type=${source.type}>`);
+                    });
+                    $waitForVideoCover.append($videoElement);
+                }
+
+                // Add the text and set its color so it'll be visible against the background
+                let $waitForVideoText = $(`<div>${expFormat(this.get('waitForRecordingMessage'))}</div>`);
+                $waitForVideoText.addClass('video-record-mixin-wait-for-video-text');
+                $waitForVideoText.css('color', (colorSpecRGBA[0] + colorSpecRGBA[1] + colorSpecRGBA[2] > 128 * 3) ? 'black' : 'white');
+                $waitForVideoCover.append($waitForVideoText);
+
+                $('div.lookit-frame').append($waitForVideoCover);
+
+                if (this.get('showWaitForRecordingMessage') && this.get('startRecordingAutomatically')) {
+                    $waitForVideoCover.css('display', 'block');
+                }
+            }
+
             var _this = this;
             this.setupRecorder(this.$(this.get('recorderElement'))).then(() => {
                 /**
