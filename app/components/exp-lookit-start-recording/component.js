@@ -2,7 +2,7 @@ import Ember from 'ember';
 import layout from './template';
 import ExpFrameBaseComponent from '../exp-frame-base/component';
 import ExpandAssets from '../../mixins/expand-assets';
-import isColor from '../../utils/is-color';
+import isColor, {colorSpecToRgbaArray, textColorForBackground} from '../../utils/is-color';
 import { imageAssetOptions, videoAssetOptions } from '../../mixins/expand-assets';
 
 let {
@@ -71,9 +71,6 @@ let {
 export default ExpFrameBaseComponent.extend(ExpandAssets, {
     layout: layout,
     type: 'exp-lookit-start-recording',
-
-    fullScreenElementId: 'experiment-player',
-    fsButtonID: 'fsButton',
 
     /**
      *
@@ -190,8 +187,14 @@ export default ExpFrameBaseComponent.extend(ExpandAssets, {
         this.set('hasVideo', this.get('video').length > 0);
 
         // Apply background colors
-        if (isColor(this.get('backgroundColor'))) {
-            $('div.exp-lookit-start-recording').css('background-color', this.get('backgroundColor'));
+        let colorSpec = this.get('backgroundColor');
+        if (isColor(colorSpec)) {
+            $('div.exp-lookit-start-stop-recording').css('background-color', colorSpec);
+            // Set text color so it'll be visible (black or white depending on how dark background is). Use style
+            // so this applies whenever pause text actually appears.
+            let colorSpecRGBA = colorSpecToRgbaArray(colorSpec);
+            //$(`<style>.exp-lookit-start-stop-recording p.waitForVideo { color: ${textColor}; }</style>`).appendTo('div.exp-lookit-start-stop-recording');
+            $('p.wait-for-video').css('color', textColorForBackground(colorSpecRGBA));
         } else {
             console.warn('Invalid background color provided; not applying.');
         }

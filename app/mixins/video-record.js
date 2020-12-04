@@ -1,6 +1,9 @@
 import Ember from 'ember';
 import { observer } from '@ember/object';
 import VideoRecorder from '../services/video-recorder';
+import { colorSpecToRgbaArray, isColor, textColorForBackground } from '../utils/is-color';
+import { expFormat } from '../helpers/exp-format';
+import { mergeObjectOfArrays } from "../utils/replace-values";
 
 let {
     $
@@ -271,6 +274,24 @@ export default Ember.Mixin.create({
         const recorder = this.get('recorder');
         if (recorder && recorder.get('recording')) {
             this.send('setTimeEvent', 'stoppingCapture');
+            if (this.get('showWaitForUploadMessage')) {
+                // TODO: consider adding progress bar
+                $( "video audio" ).each(function() {
+                    this.pause();
+                });
+
+                let colorSpec = this.get('waitForUploadMessageColor');
+                if (!isColor(colorSpec)) {
+                    console.warn(`Invalid background color waitForRecordingUploadColor (${colorSpec}) provided; using default instead.`);
+                    colorSpec = 'white';
+                }
+                let colorSpecRGBA = colorSpecToRgbaArray(colorSpec);
+                $('.video-record-mixin-wait-for-video').css('background-color', colorSpec);
+                $('.video-record-mixin-wait-for-video-text').css('color', textColorForBackground(colorSpecRGBA));
+                $('.video-record-mixin-wait-for-video-text').html(`${expFormat(this.get('waitForUploadMessage'))}`);
+                $('.video-record-mixin-wait-for-video').show();
+
+            }
             return recorder.stop(this.get('maxUploadSeconds') * 1000);
         } else {
             return Ember.RSVP.reject(1);
@@ -310,9 +331,19 @@ export default Ember.Mixin.create({
         _this._super(...arguments);
     },
 
+    didReceiveAttrs() {
+        let assets = this.get('assetsToExpand') ? this.get('assetsToExpand') : {};
+        let additionalAssetsToExpand = {
+            image: ['waitForUploadImage'],
+            video: ['waitForUploadVideo']
+        };
+        this.set('assetsToExpand', mergeObjectOfArrays(assets, additionalAssetsToExpand));
+        this._super(...arguments);
+    },
+
     didInsertElement() {
         // Give any active session recorder precedence over individual-frame recording
-        if (this.get('sessionRecorder') && this.get('session').get('recordingInProgress')) {
+        if (this.get('sessionRecorder') && this.get('session').get('recordingInProgress') && this.get('doUseCamera')) {
             console.warn('Recording on this frame was specified, but session recording is already active. Not making frame recording.');
             this.set('doUseCamera', false);
         }
@@ -352,7 +383,7 @@ export default Ember.Mixin.create({
                 // Add the text and set its color so it'll be visible against the background
                 let $waitForVideoText = $(`<div>${expFormat(this.get('waitForRecordingMessage'))}</div>`);
                 $waitForVideoText.addClass('video-record-mixin-wait-for-video-text');
-                $waitForVideoText.css('color', (colorSpecRGBA[0] + colorSpecRGBA[1] + colorSpecRGBA[2] > 128 * 3) ? 'black' : 'white');
+                $waitForVideoText.css('color', textColorForBackground(colorSpecRGBA));
                 $waitForVideoCover.append($waitForVideoText);
 
                 $('div.lookit-frame').append($waitForVideoCover);
